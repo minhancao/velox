@@ -483,7 +483,6 @@ TEST_F(HiveDataSinkTest, basic) {
   if (hasWriterFactory(dwio::common::FileFormat::PARQUET)) {
     fileFormats.push_back(dwio::common::FileFormat::PARQUET);
   }
-
   for (dwio::common::FileFormat fileFormat : fileFormats) {
     SCOPED_TRACE(fmt::format(
         "Using file format: {}", dwio::common::toString(fileFormat)));
@@ -533,40 +532,50 @@ TEST_F(HiveDataSinkTest, basicBucket) {
       std::vector<std::shared_ptr<const HiveSortingColumn>>{
           std::make_shared<HiveSortingColumn>(
               "c1", core::SortOrder{false, false})});
-  auto dataSink = createDataSink(
-      rowType_,
-      outputDirectory->getPath(),
-      dwio::common::FileFormat::DWRF,
-      {},
-      bucketProperty);
-  auto stats = dataSink->stats();
-  ASSERT_TRUE(stats.empty()) << stats.toString();
-  ASSERT_EQ(
-      stats.toString(),
-      "numWrittenBytes 0B numWrittenFiles 0 spillRuns[0] spilledInputBytes[0B] "
-      "spilledBytes[0B] spilledRows[0] spilledPartitions[0] spilledFiles[0] "
-      "spillFillTimeUs[0us] spillSortTime[0us] spillSerializationTime[0us] "
-      "spillWrites[0] spillFlushTime[0us] spillWriteTime[0us] "
-      "maxSpillExceededLimitCount[0] spillReadBytes[0B] spillReads[0] "
-      "spillReadTime[0us] spillReadDeserializationTime[0us]");
 
-  const int numBatches = 10;
-  const auto vectors = createVectors(500, numBatches);
-  for (const auto& vector : vectors) {
-    dataSink->appendData(vector);
+  std::vector<dwio::common::FileFormat> fileFormats = {
+      dwio::common::FileFormat::DWRF};
+  if (hasWriterFactory(dwio::common::FileFormat::PARQUET)) {
+    fileFormats.push_back(dwio::common::FileFormat::PARQUET);
   }
-  stats = dataSink->stats();
-  ASSERT_FALSE(stats.empty());
-  ASSERT_GT(stats.numWrittenBytes, 0);
-  ASSERT_EQ(stats.numWrittenFiles, 0);
+  for (dwio::common::FileFormat fileFormat : fileFormats) {
+    SCOPED_TRACE(fmt::format(
+        "Using file format: {}", dwio::common::toString(fileFormat)));
+    auto dataSink = createDataSink(
+        rowType_,
+        outputDirectory->getPath(),
+        fileFormat,
+        {},
+        bucketProperty);
+    auto stats = dataSink->stats();
+    ASSERT_TRUE(stats.empty()) << stats.toString();
+    ASSERT_EQ(
+        stats.toString(),
+        "numWrittenBytes 0B numWrittenFiles 0 spillRuns[0] spilledInputBytes[0B] "
+        "spilledBytes[0B] spilledRows[0] spilledPartitions[0] spilledFiles[0] "
+        "spillFillTimeUs[0us] spillSortTime[0us] spillSerializationTime[0us] "
+        "spillWrites[0] spillFlushTime[0us] spillWriteTime[0us] "
+        "maxSpillExceededLimitCount[0] spillReadBytes[0B] spillReads[0] "
+        "spillReadTime[0us] spillReadDeserializationTime[0us]");
 
-  const auto partitions = dataSink->close();
-  stats = dataSink->stats();
-  ASSERT_FALSE(stats.empty());
-  ASSERT_EQ(partitions.size(), numBuckets);
+    const int numBatches = 10;
+    const auto vectors = createVectors(500, numBatches);
+    for (const auto& vector : vectors) {
+      dataSink->appendData(vector);
+    }
+    stats = dataSink->stats();
+    ASSERT_FALSE(stats.empty());
+    ASSERT_GT(stats.numWrittenBytes, 0);
+    ASSERT_EQ(stats.numWrittenFiles, 0);
 
-  createDuckDbTable(vectors);
-  verifyWrittenData(outputDirectory->getPath(), numBuckets);
+    const auto partitions = dataSink->close();
+    stats = dataSink->stats();
+    ASSERT_FALSE(stats.empty());
+    ASSERT_EQ(partitions.size(), numBuckets);
+
+    createDuckDbTable(vectors);
+    verifyWrittenData(outputDirectory->getPath(), numBuckets);
+  }
 }
 
 TEST_F(HiveDataSinkTest, close) {
@@ -575,7 +584,6 @@ TEST_F(HiveDataSinkTest, close) {
   if (hasWriterFactory(dwio::common::FileFormat::PARQUET)) {
     fileFormats.push_back(dwio::common::FileFormat::PARQUET);
   }
-
   for (dwio::common::FileFormat fileFormat : fileFormats) {
     SCOPED_TRACE(fmt::format(
         "Using file format: {}", dwio::common::toString(fileFormat)));
@@ -621,7 +629,6 @@ TEST_F(HiveDataSinkTest, abort) {
   if (hasWriterFactory(dwio::common::FileFormat::PARQUET)) {
     fileFormats.push_back(dwio::common::FileFormat::PARQUET);
   }
-
   for (dwio::common::FileFormat fileFormat : fileFormats) {
     SCOPED_TRACE(fmt::format(
         "Using file format: {}", dwio::common::toString(fileFormat)));

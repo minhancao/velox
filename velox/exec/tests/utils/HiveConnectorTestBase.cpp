@@ -22,7 +22,10 @@
 #include "velox/dwio/common/tests/utils/BatchMaker.h"
 #include "velox/dwio/dwrf/reader/DwrfReader.h"
 #include "velox/dwio/dwrf/writer/Writer.h"
+#include "velox/dwio/parquet/writer/Writer.h"
 #include "velox/exec/tests/utils/AssertQueryBuilder.h"
+
+using namespace facebook::velox::parquet;
 
 namespace facebook::velox::exec::test {
 
@@ -79,21 +82,47 @@ void HiveConnectorTestBase::writeToFile(
     const std::vector<RowVectorPtr>& vectors,
     std::shared_ptr<dwrf::Config> config,
     const TypePtr& schema) {
-  velox::dwrf::WriterOptions options;
-  // WIP: Need to edit this function to support writing in Parquet, currently
-  // only writing for DWRF
-  options.config = config;
-  options.schema = schema;
-  auto localWriteFile = std::make_unique<LocalWriteFile>(filePath, true, false);
-  auto sink = std::make_unique<dwio::common::WriteFileSink>(
-      std::move(localWriteFile), filePath);
-  auto childPool = rootPool_->addAggregateChild("HiveConnectorTestBase.Writer");
-  options.memoryPool = childPool.get();
-  facebook::velox::dwrf::Writer writer{std::move(sink), options};
-  for (size_t i = 0; i < vectors.size(); ++i) {
-    writer.write(vectors[i]);
+  // Add future supported file formats here to this vector, 
+  // currently supports DWRF and Parquet formats.
+  std::vector<dwio::common::FileFormat> fileFormats = {dwio::common::FileFormat::DWRF};
+  if (hasWriterFactory(dwio::common::FileFormat::PARQUET)) {
+    fileFormats.push_back(dwio::common::FileFormat::PARQUET);
   }
-  writer.close();
+
+  for (dwio::common::FileFormat fileFormat : fileFormats) {
+    auto localWriteFile = std::make_unique<LocalWriteFile>(filePath, true, false);
+    auto sink = std::make_unique<dwio::common::WriteFileSink>(
+        std::move(localWriteFile), filePath);
+    auto childPool = rootPool_->addAggregateChild("HiveConnectorTestBase.Writer");
+    switch(fileFormat) {
+      case dwio::common::FileFormat::PARQUET: {
+        facebook::velox::parquet::WriterOptions writerOptions;
+        writerOptions.memoryPool = childPool.get();
+        auto parquetWriter = std::make_unique<facebook::velox::parquet::Writer>(
+            std::move(sink), writerOptions, asRowType(schema));
+        for (size_t i = 0; i < vectors.size(); ++i) {
+          parquetWriter->write(vectors[i]);
+        }
+        parquetWriter->close();
+        break;
+      }
+      
+      // Default is dwrf file format.
+      default: {
+        velox::dwrf::WriterOptions options;
+        // WIP: Need to edit this function to support writing in Parquet, currently
+        // only writing for DWRF
+        options.config = config;
+        options.schema = schema;
+        options.memoryPool = childPool.get();
+        facebook::velox::dwrf::Writer dwrfWriter{std::move(sink), options};
+        for (size_t i = 0; i < vectors.size(); ++i) {
+          dwrfWriter.write(vectors[i]);
+        }
+        dwrfWriter.close();
+      }
+    }
+  }
 }
 
 std::vector<RowVectorPtr> HiveConnectorTestBase::makeVectors(
@@ -218,8 +247,10 @@ HiveConnectorTestBase::makeHiveConnectorSplit(
     const std::string& filePath,
     uint64_t start,
     uint64_t length,
-    int64_t splitWeight) {
+    int64_t splitWeight,
+    const dwio::common::FileFormat fileFormat) {
   return HiveConnectorSplitBuilder(filePath)
+      .fileFormat(fileFormat)
       .start(start)
       .length(length)
       .splitWeight(splitWeight)
@@ -232,8 +263,10 @@ HiveConnectorTestBase::makeHiveConnectorSplit(
     int64_t fileSize,
     int64_t fileModifiedTime,
     uint64_t start,
-    uint64_t length) {
+    uint64_t length,
+    const dwio::common::FileFormat fileFormat) {
   return HiveConnectorSplitBuilder(filePath)
+      .fileFormat(fileFormat)
       .infoColumn("$file_size", fmt::format("{}", fileSize))
       .infoColumn("$file_modified_time", fmt::format("{}", fileModifiedTime))
       .start(start)

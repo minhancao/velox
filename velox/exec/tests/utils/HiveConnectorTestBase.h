@@ -84,14 +84,16 @@ class HiveConnectorTestBase : public OperatorTestBase {
       const std::string& filePath,
       uint64_t start = 0,
       uint64_t length = std::numeric_limits<uint64_t>::max(),
-      int64_t splitWeight = 0);
+      int64_t splitWeight = 0,
+      const dwio::common::FileFormat fileFormat = dwio::common::FileFormat::DWRF);
 
   static std::shared_ptr<connector::ConnectorSplit> makeHiveConnectorSplit(
       const std::string& filePath,
       int64_t fileSize,
       int64_t fileModifiedTime,
       uint64_t start,
-      uint64_t length);
+      uint64_t length,
+      const dwio::common::FileFormat fileFormat = dwio::common::FileFormat::DWRF);
 
   /// Split file at path 'filePath' into 'splitCount' splits. If not local file,
   /// file size can be given as 'externalSize'.
