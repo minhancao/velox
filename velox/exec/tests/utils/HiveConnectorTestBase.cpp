@@ -141,9 +141,10 @@ std::vector<RowVectorPtr> HiveConnectorTestBase::makeVectors(
 std::shared_ptr<exec::Task> HiveConnectorTestBase::assertQuery(
     const core::PlanNodePtr& plan,
     const std::vector<std::shared_ptr<TempFilePath>>& filePaths,
-    const std::string& duckDbSql) {
+    const std::string& duckDbSql,
+    const dwio::common::FileFormat fileFormat) {
   return OperatorTestBase::assertQuery(
-      plan, makeHiveConnectorSplits(filePaths), duckDbSql);
+      plan, makeHiveConnectorSplits(filePaths, fileFormat), duckDbSql);
 }
 
 std::shared_ptr<Task> HiveConnectorTestBase::assertQuery(
@@ -229,7 +230,8 @@ HiveConnectorTestBase::makeColumnHandle(
 
 std::vector<std::shared_ptr<connector::ConnectorSplit>>
 HiveConnectorTestBase::makeHiveConnectorSplits(
-    const std::vector<std::shared_ptr<TempFilePath>>& filePaths) {
+    const std::vector<std::shared_ptr<TempFilePath>>& filePaths,
+    const dwio::common::FileFormat fileFormat) {
   std::vector<std::shared_ptr<connector::ConnectorSplit>> splits;
   for (auto filePath : filePaths) {
     splits.push_back(makeHiveConnectorSplit(
@@ -237,7 +239,8 @@ HiveConnectorTestBase::makeHiveConnectorSplits(
         filePath->fileSize(),
         filePath->fileModifiedTime(),
         0,
-        std::numeric_limits<uint64_t>::max()));
+        std::numeric_limits<uint64_t>::max(),
+        fileFormat));
   }
   return splits;
 }

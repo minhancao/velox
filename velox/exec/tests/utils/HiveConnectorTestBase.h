@@ -66,7 +66,8 @@ class HiveConnectorTestBase : public OperatorTestBase {
   std::shared_ptr<exec::Task> assertQuery(
       const core::PlanNodePtr& plan,
       const std::vector<std::shared_ptr<TempFilePath>>& filePaths,
-      const std::string& duckDbSql);
+      const std::string& duckDbSql,
+      const dwio::common::FileFormat fileFormat = dwio::common::FileFormat::DWRF);
 
   std::shared_ptr<Task> assertQuery(
       const core::PlanNodePtr& plan,
@@ -78,7 +79,8 @@ class HiveConnectorTestBase : public OperatorTestBase {
 
   static std::vector<std::shared_ptr<connector::ConnectorSplit>>
   makeHiveConnectorSplits(
-      const std::vector<std::shared_ptr<TempFilePath>>& filePaths);
+      const std::vector<std::shared_ptr<TempFilePath>>& filePaths,
+      const dwio::common::FileFormat fileFormat = dwio::common::FileFormat::DWRF);
 
   static std::shared_ptr<connector::ConnectorSplit> makeHiveConnectorSplit(
       const std::string& filePath,
