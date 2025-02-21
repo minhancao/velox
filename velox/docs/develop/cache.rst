@@ -13,60 +13,7 @@ for more information about Velox's file cache.
 
 Configuration Properties
 ------------------------
-The AsyncDataCache can be enabled by setting the following config:
-
-.. code-block:: bash
-
-    async-data-cache-enabled=true
-
-
-Other properties affecting the AsyncDataCache
----------------------------------------------
-There is a ``cache.no_retention`` session property in Velox that can be set to control if a query's cached data is retained 
-or not after its execution.
-
-``cache.no_retention``
-^^^^^^^^^^^^^^^^^^^^^^
-.. list-table::
-   :widths: 30 10 10 70
-   :header-rows: 1
-
-   * - Session Property Name
-     - Type
-     - Default Value
-     - Description
-   * - cache.no_retention
-     - bool
-     - false
-     - If set to true, evicts data read by a query (using a table scan) from the in-memory cache right after the access 
-       and also skips staging to the SSD cache.
-
-Set the ``hive.node_scheduler_affinity`` session property accordingly to turn ON/OFF ``cache.no_retention``.​
-
-.. code-block:: bash
-
-    SET SESSION hive.node_selection_strategy='NO_PREFERENCE'; // To turn cache.no_retention ON.​
-    SET SESSION hive.node_selection_strategy='SOFT_AFFINITY'; // To turn cache.no_retention OFF.​
-    SET SESSION hive.node_selection_strategy='HARD_AFFINITY'; // To turn cache.no_retention OFF.​
-
-
-``query-data-cache-enabled-default``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. list-table::
-   :widths: 30 10 10 70
-   :header-rows: 1
-
-   * - Configuration Property Name
-     - Type
-     - Default Value
-     - Description
-   * - query-data-cache-enabled-default
-     - bool
-     - true
-     - If ``true``, SSD cache is enabled by default and is disabled only if ``node_selection_strategy`` 
-       is present and set to ``NO_PREFERENCE``. Otherwise, SSD cache is disabled by default and is 
-       enabled if ``node_selection_strategy`` is present and set to 
-       ``SOFT_AFFINITY`` or ``HARD_AFFINITY``.
+See `Configuration Properties <../configs.rst>`_ for AsyncDataCache related configuration properties.
 
 =========
 SSD Cache
@@ -80,38 +27,7 @@ This helps mitigate the number of reads from slower storage.
 
 Configuration Properties
 ------------------------
-The SSD cache can be used by setting the following configs:
-
-.. code-block:: bash
-
-    async-data-cache-enabled=true
-    async-cache-ssd-gb=<the size of your SSD>
-    async-cache-ssd-path=<path to directory that is mounted onto SSD>
-
-.. list-table::
-   :widths: 30 10 10 70
-   :header-rows: 1
-
-   * - Property Name
-     - Type
-     - Default Value
-     - Description
-   * - async-data-cache-enabled
-     - bool
-     - true
-     - If true, enable async data cache.
-   * - async-cache-ssd-gb
-     - integer
-     - 0
-     - The size of the SSD.
-   * - async-cache-ssd-path
-     - string
-     - /mnt/flash/async_cache.
-     - The directory that is mounted onto SSD.
-
-
-Other configuration properties can also be set to control how often the async data cache writes to SSD. 
-See `Configuration Properties <../configs.rst>`_ for more SSD Cache related configuration properties.
+See `Configuration Properties <../configs.rst>`_ for SSD Cache related configuration properties.
 
 Metrics
 -------
@@ -119,11 +35,11 @@ There are SSD cache relevant metrics that Velox emits during query execution and
 See `Debugging Metrics <./debugging/metrics.rst>`_ and `Monitoring Metrics <../monitoring/metrics.rst>`_ for more details.
 
 
-Setup with btrfs filesystem on worker machines (Linux only)
------------------------------------------------------------
+Setup with btrfs filesystem
+---------------------------
 Multiple factors contribute to utilizing the SSD cache effectively. 
-One of them is choosing the best file system that allows direct writes for best performance.
-Btrfs was found to be a good file system to use due to its built-in data compression, 
+One of them is choosing a file system that allows direct writes for best performance.
+Btrfs is a recommended file system due to its built-in data compression, 
 support for O_DIRECT writes, and the ability to perform asynchronous discard operations. 
 These features combine to enhance storage efficiency, improve performance, and optimize disk management.
 
@@ -145,7 +61,6 @@ NOTE: Commands below were ran successfully for worker machines of Amazon EC2 r6 
 
 .. code-block:: bash
 
-    # This is for if your worker machine is part of a Docker swarm and needs to connect back to it.
     # The systemd packages need to be updated to match with the new updated kernel.
     sudo dnf -y install systemd-networkd systemd-boot
 
