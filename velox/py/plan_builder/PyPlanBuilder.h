@@ -260,6 +260,7 @@ class PyPlanBuilder {
   /// empty (the default), generate data for all columns.
   /// @param scaleFactor TPC-H scale factor to use - controls the amount of
   /// data generated.
+  /// @param textPoolSizeMb The TPC-H text pool size in MB.
   /// @param numParts How many splits to generate. This controls the
   /// parallelism and the number of output files to be generated.
   /// @param connector_id ID of the connector to use for this scan.
@@ -267,6 +268,7 @@ class PyPlanBuilder {
       const std::string& tableName,
       const std::vector<std::string>& columns,
       double scaleFactor,
+      int32_t textPoolSizeMb,
       size_t numParts,
       const std::string& connectorId);
 
