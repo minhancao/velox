@@ -72,8 +72,9 @@ TpchDataSource::TpchDataSource(
     const std::unordered_map<
         std::string,
         std::shared_ptr<connector::ColumnHandle>>& columnHandles,
+    const std::shared_ptr<TpchConfig>& tpchConfig,
     velox::memory::MemoryPool* pool)
-    : pool_(pool) {
+    : tpchConfig_(tpchConfig), pool_(pool) {
   auto tpchTableHandle =
       std::dynamic_pointer_cast<TpchTableHandle>(tableHandle);
   VELOX_CHECK_NOT_NULL(

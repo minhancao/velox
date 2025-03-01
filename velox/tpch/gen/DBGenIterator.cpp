@@ -25,6 +25,8 @@ namespace {
 
 using namespace dbgen;
 
+static int32_t globalTextPoolSizeMb = 10;
+
 // DBGenBackend is a singleton that controls access to the DBGEN C functions,
 // and ensures that the required structures are properly initialized and
 // destructed.
@@ -32,50 +34,31 @@ using namespace dbgen;
 // Only acquire instances of this class using folly::Singleton.
 class DBGenBackend {
  public:
-  DBGenBackend(int32_t textPoolSizeMb) {
-    load_new_dists(textPoolSizeMb);
+  DBGenBackend() {
+    // load_dists()/cleanup_dists() need to be called to ensure the global
+    // structures required by dbgen are populated.
+    DBGenContext dbgenCtx;
+    load_dists(
+        globalTextPoolSizeMb * 1024 * 1024,
+        &dbgenCtx); // 300 MB buffer size for text generation.
+
+    // Initialize global dbgen buffers required to generate data.
     init_build_buffers();
   }
 
   ~DBGenBackend() {
     cleanup_dists();
   }
-
-  void load_new_dists(int32_t textPoolSizeMb) {
-    textPoolSizeMb_ = textPoolSizeMb;
-    DBGenContext dbgenCtx;
-
-    // load_dists()/cleanup_dists() need to be called to ensure the global
-    // structures required by dbgen are populated.
-    load_dists(textPoolSizeMb_ * 1024 * 1024, &dbgenCtx);
-  }
-
-  int32_t getTextPoolSizeMb() const {
-    return textPoolSizeMb_;
-  }
-
- protected:
-  int32_t textPoolSizeMb_;
 };
 
 // Make the object above a singleton.
-folly::Singleton<DBGenBackend>* getDBGenBackendSingleton(
-    int32_t textPoolSizeMb) {
-  static folly::Singleton<DBGenBackend> DBGenBackendSingleton(
-      [textPoolSizeMb]() { return new DBGenBackend(textPoolSizeMb); });
-  return &DBGenBackendSingleton;
-}
+static folly::Singleton<DBGenBackend> DBGenBackendSingleton;
 
 } // namespace
 
 DBGenIterator::DBGenIterator(double scaleFactor, int32_t textPoolSizeMb) {
-  auto dbgenBackend = getDBGenBackendSingleton(textPoolSizeMb)->try_get();
-  int32_t currentTextPoolSizeMb = dbgenBackend->getTextPoolSizeMb();
-  // This is to ensure not loading dists again when new text pool size
-  // is the same.
-  if (currentTextPoolSizeMb != textPoolSizeMb) {
-    dbgenBackend->load_new_dists(textPoolSizeMb);
-  }
+  globalTextPoolSizeMb = textPoolSizeMb;
+  auto dbgenBackend = DBGenBackendSingleton.try_get();
   VELOX_CHECK_NOT_NULL(dbgenBackend, "Unable to initialize dbgen's dbgunk.");
   VELOX_CHECK_GE(scaleFactor, 0, "Tpch scale factor must be non-negative");
   if (scaleFactor < MIN_SCALE && scaleFactor > 0) {
