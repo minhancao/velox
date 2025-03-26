@@ -28,8 +28,8 @@ RowVectorPtr getTpchData(
     size_t maxRows,
     size_t offset,
     double scaleFactor,
-    memory::MemoryPool* pool,
-    int32_t textPoolSizeMb) {
+    int32_t textPoolSizeMb,
+    memory::MemoryPool* pool) {
   switch (table) {
     case Table::TBL_PART:
       return velox::tpch::genTpchPart(
@@ -168,11 +168,10 @@ std::optional<RowVectorPtr> TpchDataSource::next(
   }
 
   size_t maxRows = std::min(size, (splitEnd_ - splitOffset_));
-  // For correct query results matching with Presto, use 300 MB for the
-  // text pool size instead of the default 10 MB.
-  auto textPoolSizeMb = 10;
+  // For correct query results matching with Presto, set textPoolSizeMb_ to
+  // 300 MB for the text pool size instead of the default 10 MB.
   auto outputVector = getTpchData(
-      tpchTable_, maxRows, splitOffset_, scaleFactor_, pool_, textPoolSizeMb);
+      tpchTable_, maxRows, splitOffset_, scaleFactor_, textPoolSizeMb_, pool_);
 
   // If the split is exhausted.
   if (!outputVector || outputVector->size() == 0) {

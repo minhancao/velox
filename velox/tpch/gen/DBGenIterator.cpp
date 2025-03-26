@@ -25,10 +25,6 @@ namespace {
 
 using namespace dbgen;
 
-// For correct query results matching with Presto, use 300 MB for the
-// text pool size instead of the default 10 MB.
-static int32_t globalTextPoolSizeMb = 10;
-
 // DBGenBackend is a singleton that controls access to the DBGEN C functions,
 // and ensures that the required structures are properly initialized and
 // destructed.
@@ -36,12 +32,14 @@ static int32_t globalTextPoolSizeMb = 10;
 // Only acquire instances of this class using folly::Singleton.
 class DBGenBackend {
  public:
-  DBGenBackend() {
+  // For correct query results matching with Presto, use 300 MB for the
+  // text pool size instead of the default 10 MB.
+  DBGenBackend(int32_t textPoolSizeMb) {
     // load_dists()/cleanup_dists() need to be called to ensure the global
     // structures required by dbgen are populated.
     DBGenContext dbgenCtx;
     load_dists(
-        globalTextPoolSizeMb * 1024 * 1024,
+        textPoolSizeMb * 1024 * 1024,
         &dbgenCtx); // 300 MB buffer size for text generation.
 
     // Initialize global dbgen buffers required to generate data.
@@ -53,13 +51,17 @@ class DBGenBackend {
 };
 
 // Make the object above a singleton.
-static folly::Singleton<DBGenBackend> DBGenBackendSingleton;
+folly::Singleton<DBGenBackend>* getDBGenBackendSingleton(
+    int32_t textPoolSizeMb) {
+  static folly::Singleton<DBGenBackend> DBGenBackendSingleton(
+      [textPoolSizeMb]() { return new DBGenBackend(textPoolSizeMb); });
+  return &DBGenBackendSingleton;
+}
 
 } // namespace
 
 DBGenIterator::DBGenIterator(double scaleFactor, int32_t textPoolSizeMb) {
-  globalTextPoolSizeMb = textPoolSizeMb;
-  auto dbgenBackend = DBGenBackendSingleton.try_get();
+  auto dbgenBackend = getDBGenBackendSingleton(textPoolSizeMb)->try_get();
   VELOX_CHECK_NOT_NULL(dbgenBackend, "Unable to initialize dbgen's dbgunk.");
   VELOX_CHECK_GE(scaleFactor, 0, "Tpch scale factor must be non-negative");
   if (scaleFactor < MIN_SCALE && scaleFactor > 0) {
