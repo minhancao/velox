@@ -25,6 +25,8 @@ namespace {
 
 using namespace dbgen;
 
+// For correct query results matching with Presto, use 300 MB for the
+// text pool size instead of the default 10 MB.
 static int32_t globalTextPoolSizeMb = 10;
 
 // DBGenBackend is a singleton that controls access to the DBGEN C functions,

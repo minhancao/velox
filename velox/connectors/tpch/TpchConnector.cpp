@@ -72,9 +72,8 @@ TpchDataSource::TpchDataSource(
     const std::unordered_map<
         std::string,
         std::shared_ptr<connector::ColumnHandle>>& columnHandles,
-    const std::shared_ptr<TpchConfig>& tpchConfig,
     velox::memory::MemoryPool* pool)
-    : tpchConfig_(tpchConfig), pool_(pool) {
+    : pool_(pool) {
   auto tpchTableHandle =
       std::dynamic_pointer_cast<TpchTableHandle>(tableHandle);
   VELOX_CHECK_NOT_NULL(
@@ -169,7 +168,9 @@ std::optional<RowVectorPtr> TpchDataSource::next(
   }
 
   size_t maxRows = std::min(size, (splitEnd_ - splitOffset_));
-  auto textPoolSizeMb = tpchConfig_->textPoolSizeMb();
+  // For correct query results matching with Presto, use 300 MB for the
+  // text pool size instead of the default 10 MB.
+  auto textPoolSizeMb = 10;
   auto outputVector = getTpchData(
       tpchTable_, maxRows, splitOffset_, scaleFactor_, pool_, textPoolSizeMb);
 

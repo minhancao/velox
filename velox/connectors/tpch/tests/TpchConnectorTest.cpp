@@ -44,8 +44,7 @@ class TpchConnectorTest : public exec::test::OperatorTestBase {
             ->newConnector(
                 kTpchConnectorId,
                 std::make_shared<config::ConfigBase>(
-                    std::unordered_map<std::string, std::string>{
-                        {"tpch.text-pool-size-mb", "10"}}));
+                    std::unordered_map<std::string, std::string>()));
     connector::registerConnector(tpchConnector);
   }
 
