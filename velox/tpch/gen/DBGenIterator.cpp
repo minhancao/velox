@@ -35,19 +35,29 @@ class DBGenBackend {
   // For correct query results matching with Presto, use 300 MB for the
   // text pool size instead of the default 10 MB.
   DBGenBackend(int32_t textPoolSizeMb) {
-    // load_dists()/cleanup_dists() need to be called to ensure the global
-    // structures required by dbgen are populated.
-    DBGenContext dbgenCtx;
-    load_dists(
-        textPoolSizeMb * 1024 * 1024,
-        &dbgenCtx); // 300 MB buffer size for text generation.
-
-    // Initialize global dbgen buffers required to generate data.
+    load_new_dists(textPoolSizeMb);
     init_build_buffers();
   }
+
   ~DBGenBackend() {
     cleanup_dists();
   }
+
+  void load_new_dists(int32_t textPoolSizeMb) {
+    textPoolSizeMb_ = textPoolSizeMb;
+    DBGenContext dbgenCtx;
+
+    // load_dists()/cleanup_dists() need to be called to ensure the global
+    // structures required by dbgen are populated.
+    load_dists(textPoolSizeMb_ * 1024 * 1024, &dbgenCtx);
+  }
+
+  int32_t getTextPoolSizeMb() const {
+    return textPoolSizeMb_;
+  }
+
+ protected:
+  int32_t textPoolSizeMb_;
 };
 
 // Make the object above a singleton.
@@ -62,6 +72,14 @@ folly::Singleton<DBGenBackend>* getDBGenBackendSingleton(
 
 DBGenIterator::DBGenIterator(double scaleFactor, int32_t textPoolSizeMb) {
   auto dbgenBackend = getDBGenBackendSingleton(textPoolSizeMb)->try_get();
+  if (dbgenBackend != nullptr) {
+    int32_t currentTextPoolSizeMb = dbgenBackend->getTextPoolSizeMb();
+    // This is to ensure not loading dists again when new text pool size
+    // is the same.
+    if (currentTextPoolSizeMb != textPoolSizeMb) {
+      dbgenBackend->load_new_dists(textPoolSizeMb);
+    }
+  }
   VELOX_CHECK_NOT_NULL(dbgenBackend, "Unable to initialize dbgen's dbgunk.");
   VELOX_CHECK_GE(scaleFactor, 0, "Tpch scale factor must be non-negative");
   if (scaleFactor < MIN_SCALE && scaleFactor > 0) {

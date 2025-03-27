@@ -179,11 +179,15 @@ class PlanBuilder {
   /// @param columnNames The columns to be returned from that table.
   /// @param scaleFactor The TPC-H scale factor.
   /// @param connectorId The TPC-H connector id.
+  /// @param textPoolSizeMb The TPCH-H text pool size in MB.
+  /// For correct query results matching with Presto, use 300 MB for the
+  /// text pool size instead of the default 10 MB.
   PlanBuilder& tpchTableScan(
       tpch::Table table,
       std::vector<std::string> columnNames,
       double scaleFactor = 1,
-      std::string_view connectorId = kTpchDefaultConnectorId);
+      std::string_view connectorId = kTpchDefaultConnectorId,
+      int32_t textPoolSizeMb = 10);
 
   /// Helper class to build a custom TableScanNode.
   /// Uses a planBuilder instance to get the next plan id, memory pool, and

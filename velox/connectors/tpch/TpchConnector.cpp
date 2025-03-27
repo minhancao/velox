@@ -80,6 +80,7 @@ TpchDataSource::TpchDataSource(
       tpchTableHandle, "TableHandle must be an instance of TpchTableHandle");
   tpchTable_ = tpchTableHandle->getTable();
   scaleFactor_ = tpchTableHandle->getScaleFactor();
+  textPoolSizeMb_ = tpchTableHandle->getTextPoolSizeMb();
   tpchTableRowCount_ = getRowCount(tpchTable_, scaleFactor_);
 
   auto tpchTableSchema = getTableSchema(tpchTableHandle->getTable());
@@ -168,8 +169,6 @@ std::optional<RowVectorPtr> TpchDataSource::next(
   }
 
   size_t maxRows = std::min(size, (splitEnd_ - splitOffset_));
-  // For correct query results matching with Presto, set textPoolSizeMb_ to
-  // 300 MB for the text pool size instead of the default 10 MB.
   auto outputVector = getTpchData(
       tpchTable_, maxRows, splitOffset_, scaleFactor_, textPoolSizeMb_, pool_);
 
