@@ -118,6 +118,9 @@ class TpchDataSource : public DataSource {
 
   velox::tpch::Table tpchTable_;
   double scaleFactor_{1.0};
+  // For correct query results matching with Presto, use 300 MB for the
+  // text pool size instead of the default 10 MB.
+  int32_t textPoolSizeMb_{10};
   size_t tpchTableRowCount_{0};
   RowTypePtr outputType_;
 
@@ -135,9 +138,6 @@ class TpchDataSource : public DataSource {
   size_t completedRows_{0};
   size_t completedBytes_{0};
 
-  // For correct query results matching with Presto, use 300 MB for the
-  // text pool size instead of the default 10 MB.
-  int32_t textPoolSizeMb_{10};
   memory::MemoryPool* pool_;
 };
 

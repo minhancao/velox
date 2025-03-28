@@ -116,8 +116,8 @@ TEST_F(TpchConnectorTest, simpleTextPoolSize300MB) {
                       Table::TBL_NATION,
                       {"n_nationkey", "n_name", "n_regionkey", "n_comment"},
                       1.0,
-                      kTpchConnectorId,
-                      textPoolSizeMb)
+                      textPoolSizeMb,
+                      kTpchConnectorId)
                   .limit(0, 5, false)
                   .planNode();
 

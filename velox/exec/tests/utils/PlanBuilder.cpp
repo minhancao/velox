@@ -150,8 +150,8 @@ PlanBuilder& PlanBuilder::tpchTableScan(
     tpch::Table table,
     std::vector<std::string> columnNames,
     double scaleFactor,
-    std::string_view connectorId,
-    int32_t textPoolSizeMb) {
+    int32_t textPoolSizeMb,
+    std::string_view connectorId) {
   std::unordered_map<std::string, std::shared_ptr<connector::ColumnHandle>>
       assignmentsMap;
   std::vector<TypePtr> outputTypes;

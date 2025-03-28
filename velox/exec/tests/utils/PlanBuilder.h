@@ -186,8 +186,8 @@ class PlanBuilder {
       tpch::Table table,
       std::vector<std::string> columnNames,
       double scaleFactor = 1,
-      std::string_view connectorId = kTpchDefaultConnectorId,
-      int32_t textPoolSizeMb = 10);
+      int32_t textPoolSizeMb = 10,
+      std::string_view connectorId = kTpchDefaultConnectorId);
 
   /// Helper class to build a custom TableScanNode.
   /// Uses a planBuilder instance to get the next plan id, memory pool, and
