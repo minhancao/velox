@@ -690,6 +690,12 @@ if(NOT VELOX_DISABLE_GOOGLETEST)
   set(VELOX_GTEST_INCUDE_DIR "${gtest_SOURCE_DIR}/include" PARENT_SCOPE)
 endif()
 
+set(
+  xsimd_SOURCE
+  BUNDLED
+  CACHE STRING
+  "Use bundled xsimd"
+)
 velox_set_source(xsimd)
 velox_resolve_dependency(xsimd 10.0.0)
 
