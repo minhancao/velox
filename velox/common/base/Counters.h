@@ -220,6 +220,9 @@ constexpr std::string_view kMetricMemoryCacheTotalPrefetchBytes{
 constexpr std::string_view kMetricMemoryCacheSumEvictScore{
     "velox.memory_cache_sum_evict_score"};
 
+constexpr std::string_view kMetricMemoryCacheNumReads{
+    "velox.memory_cache_num_reads"};
+
 constexpr std::string_view kMetricMemoryCacheNumHits{
     "velox.memory_cache_num_hits"};
 
